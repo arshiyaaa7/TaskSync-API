@@ -1,0 +1,37 @@
+// To simulate creating a task either online or offline
+
+const task = {
+  title: "Buy groceries",
+  description: "Milk, Eggs, Bread",
+  completed: false,
+  updatedAt: new Date().toISOString()
+};
+
+if (navigator.onLine) {
+  // 🟢 Online → hit /api/tasks
+  fetch("http://localhost:8080/api/tasks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(task)
+  })
+    .then(res => res.json())
+    .then(data => console.log("Task saved online:", data))
+    .catch(err => console.error("Error saving online:", err));
+
+} else {
+  // 🔴 Offline → hit /api/sync
+  const syncOp = {
+    taskId: task.id || crypto.randomUUID(),   // ensure an id
+    operation: "CREATE",
+    payloadJson: JSON.stringify(task)
+  };
+
+  fetch("http://localhost:8080/api/sync/sync-tasks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify([syncOp])  // send as array
+  })
+    .then(res => res.json())
+    .then(data => console.log("Task queued offline:", data))
+    .catch(err => console.error("Error saving offline:", err));
+}
