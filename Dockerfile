@@ -1,25 +1,19 @@
-# Use official OpenJDK image
-FROM openjdk:17-jdk-slim
+# Step 1: Use Maven to build the app
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Set working directory inside container
+# Step 2: Run the JAR with Java
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml first (to cache dependencies)
-COPY mvnw .
-COPY .mvn .mvn
-COPY pom.xml .
+# Copy jar from build stage
+COPY --from=build /app/target/*.jar app.jar
 
-# Download dependencies
-RUN ./mvnw dependency:go-offline
-
-# Copy the rest of the source code
-COPY src src
-
-# Package the application (skip tests for speed)
-RUN ./mvnw package -DskipTests
-
-# Expose port 8080
+# Render sets PORT as env variable, map it to Spring Boot
+ENV PORT=8080
 EXPOSE 8080
 
-# Run the built JAR
-CMD ["java", "-jar", "target/TaskSync-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
