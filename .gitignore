@@ -38,3 +38,4 @@ pom.xml
 # Ignore Spring Boot configuration
 src/main/resources/application.properties
 
+.env
